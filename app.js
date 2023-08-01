@@ -11,11 +11,11 @@ const { requestLogger, errorLogger } = require('./middlewares/logger');
 const limiter = require('./middlewares/limiter');
 const router = require('./routes/index');
 
-const { PORT } = require('./app.config');
+const { PORT, MONGO_DB } = require('./app.config');
 
 const app = express();
 
-mongoose.connect('mongodb://0.0.0.0:27017/bitfilmsdb');
+mongoose.connect(MONGO_DB);
 
 app.use(requestLogger);
 app.use(limiter);
