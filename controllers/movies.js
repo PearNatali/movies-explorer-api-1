@@ -2,9 +2,12 @@ const Movie = require('../models/movies');
 const { getMovieDto } = require('../dto/movie');
 
 const { NotFoundError } = require('../errors/NotFoundError');
+const { AccessDeniedError } = require('../errors/AccessDeniedError');
 
 const getMovies = (req, res, next) => {
-  Movie.find({})
+  const { _id: userId } = req.user;
+
+  Movie.find({ owner: userId })
     .populate(['owner'])
     .then((movies) => res.send(movies.reverse()))
     .catch((next));
@@ -45,11 +48,17 @@ const createMovies = (req, res, next) => {
 };
 const deleteMovies = (req, res, next) => {
   const { _id: movieId } = req.params;
+  const { _id: userId } = req.user;
 
   Movie.findById(movieId)
     .orFail(new NotFoundError('Фильм не найден'))
     .populate(['owner'])
-    .then((movie) => movie.deleteOne())
+    .then((movie) => {
+      if (movie.owner._id.toString() !== userId) {
+        throw new AccessDeniedError('Недостаточно прав для удаления фильма');
+      }
+      return movie.deleteOne();
+    })
     .then((movie) => res.send(getMovieDto(movie)))
     .catch((next));
 };

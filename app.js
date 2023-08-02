@@ -10,8 +10,9 @@ const handleErrors = require('./middlewares/handleErrors');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
 const limiter = require('./middlewares/limiter');
 const router = require('./routes/index');
+const { MONGO_DB } = require('./app.config');
 
-const { PORT, MONGO_DB } = require('./app.config');
+const { PORT = 3002 } = process.env;
 
 const app = express();
 
