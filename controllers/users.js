@@ -20,7 +20,7 @@ const createUsers = (req, res, next) => {
     }))
     .then((user) => res.status(201).send(getUserDto(user)))
     .catch((err) => {
-      if (err.code === 409) {
+      if (err.code === 11000) {
         next(new ConflictError('Почта используется'));
       } else {
         next(err);
@@ -61,7 +61,7 @@ const updateInfoUsers = (req, res, next) => {
   User.findByIdAndUpdate(_id, { name, email }, { new: true, runValidators: true })
     .then((user) => res.send(getUserDto(user)))
     .catch((err) => {
-      if (err.code === 409) {
+      if (err.code === 11000) {
         next(new ConflictError('Почта используется'));
       } else {
         next(err);
