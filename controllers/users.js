@@ -6,9 +6,8 @@ const { getUserDto } = require('../dto/user');
 
 const { ConflictError } = require('../errors/ConflictError');
 const { AuthError } = require('../errors/AuthError');
-const { NotFoundError } = require('../errors/NotFoundError');
 
-const { NODE_ENV, JWT_SECRET } = require('../app.config');
+const { NODE_ENV, JWT_SECRET } = require('../config/app.config');
 
 const createUsers = (req, res, next) => {
   const {
@@ -21,8 +20,8 @@ const createUsers = (req, res, next) => {
     }))
     .then((user) => res.status(201).send(getUserDto(user)))
     .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError('Пользователь с такой почтой существует'));
+      if (err.code === 409) {
+        next(new ConflictError('Почта используется'));
       } else {
         next(err);
       }
@@ -40,14 +39,18 @@ const login = (req, res, next) => {
       );
       res.send({ token });
     })
-    .orFail(new AuthError('Пользователь не найден'))
-    .catch(next);
+    .catch((err) => {
+      if (err.code === 401) {
+        next(new AuthError('Необходима авторизация'));
+      } else {
+        next(err);
+      }
+    });
 };
 const getInfoUser = (req, res, next) => {
   const { _id } = req.user;
 
   User.findById(_id)
-    .orFail(new NotFoundError('Пользователь не найден'))
     .then((users) => res.send(users))
     .catch(next);
 };
@@ -56,11 +59,10 @@ const updateInfoUsers = (req, res, next) => {
   const { _id } = req.user;
 
   User.findByIdAndUpdate(_id, { name, email }, { new: true, runValidators: true })
-    .orFail(new NotFoundError('Пользователь не найден'))
     .then((user) => res.send(getUserDto(user)))
     .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError('Пользователь с такой почтой существует'));
+      if (err.code === 409) {
+        next(new ConflictError('Почта используется'));
       } else {
         next(err);
       }

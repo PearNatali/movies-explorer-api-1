@@ -13,35 +13,10 @@ const getMovies = (req, res, next) => {
     .catch((next));
 };
 const createMovies = (req, res, next) => {
-  const {
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    movield,
-    nameRU,
-    nameEN,
-  } = req.body;
+  const moviesData = req.body;
   const { _id: userId } = req.user;
 
-  Movie.create({
-    country,
-    director,
-    duration,
-    year,
-    description,
-    image,
-    trailerLink,
-    thumbnail,
-    owner: userId,
-    movield,
-    nameRU,
-    nameEN,
-  })
+  Movie.create({ ...moviesData, owner: userId })
     .then((movie) => movie.populate(['owner']))
     .then((movie) => res.status(201).send(getMovieDto(movie)))
     .catch((next));
@@ -51,17 +26,23 @@ const deleteMovies = (req, res, next) => {
   const { _id: userId } = req.user;
 
   Movie.findById(movieId)
-    .orFail(new NotFoundError('Фильм не найден'))
     .populate(['owner'])
     .then((movie) => {
       if (movie.owner._id.toString() !== userId) {
-        throw new AccessDeniedError('Недостаточно прав для удаления фильма');
+        throw new AccessDeniedError('Нет прав');
       }
       return movie.deleteOne();
     })
     .then((movie) => res.send(getMovieDto(movie)))
-    .catch((next));
+    .catch((err) => {
+      if (err.code === 404) {
+        next(new NotFoundError('Маршрут не найден'));
+      } else {
+        next(err);
+      }
+    });
 };
+
 module.exports = {
   getMovies,
   createMovies,
